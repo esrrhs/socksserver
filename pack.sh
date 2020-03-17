@@ -16,3 +16,6 @@ zip socksserver_mipsle.zip socksserver
 GOOS=linux GOARCH=arm go build
 zip socksserver_arm.zip socksserver
 
+GOOS=linux GOARCH=mips go build
+zip socksserver_mips.zip socksserver
+
