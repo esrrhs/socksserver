@@ -17,6 +17,8 @@ func main() {
 	nolog := flag.Int("nolog", 0, "write log file")
 	noprint := flag.Int("noprint", 0, "print stdout")
 	loglevel := flag.String("loglevel", "info", "log level")
+	user := flag.String("u", "", "username")
+	password := flag.String("p", "", "password")
 
 	flag.Parse()
 
@@ -58,16 +60,16 @@ func main() {
 			continue
 		}
 
-		go process(conn)
+		go process(conn, *user, *password)
 	}
 }
 
-func process(conn *net.TCPConn) {
+func process(conn *net.TCPConn, user string, password string) {
 
 	defer common.CrashLog()
 
 	var err error = nil
-	if err = network.Sock5HandshakeBy(conn); err != nil {
+	if err = network.Sock5HandshakeBy(conn, user, password); err != nil {
 		loggo.Error("socks handshake: %s", err)
 		conn.Close()
 		return
