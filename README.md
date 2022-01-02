@@ -12,3 +12,7 @@
 ```
 ./socksserver -l :4455
 ```
+docker
+```
+docker run --name socksserver -d --privileged --network host --restart=always esrrhs/socksserver ./socksserver -u yourusername -p yourpassword -l :1080
+```
