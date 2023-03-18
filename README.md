@@ -6,7 +6,7 @@
 [<img src="https://img.shields.io/github/v/release/esrrhs/socksserver">](https://github.com/esrrhs/socksserver/releases)
 [<img src="https://img.shields.io/github/downloads/esrrhs/socksserver/total">](https://github.com/esrrhs/socksserver/releases)
 [<img src="https://img.shields.io/docker/pulls/esrrhs/socksserver">](https://hub.docker.com/repository/docker/esrrhs/socksserver)
-[<img src="https://img.shields.io/github/workflow/status/esrrhs/socksserver/Go">](https://github.com/esrrhs/socksserver/actions)
+[<img src="https://img.shields.io/github/actions/workflow/status/esrrhs/socksserver/go.yml?branch=master">](https://github.com/esrrhs/socksserver/actions)
 
 简单的socks5服务器
 ```
