@@ -7,70 +7,70 @@
 [<img src="https://img.shields.io/docker/pulls/esrrhs/socksserver">](https://hub.docker.com/repository/docker/esrrhs/socksserver)
 [<img src="https://img.shields.io/github/actions/workflow/status/esrrhs/socksserver/go.yml?branch=master">](https://github.com/esrrhs/socksserver/actions)
 
-轻量、高性能的 SOCKS5 服务器（支持认证与优雅停止）。
+A lightweight, high-performance SOCKS5 proxy server with authentication and graceful shutdown support.
 
-## 特性
+## Features
 
-- **轻量高效**：基于 Go 标准网络库与零拷贝传输机制
-- **认证支持**：支持无认证模式及基于用户名/密码的认证
-- **安全健壮**：连接超时保护，连接异常自动回收，避免资源泄露
-- **平滑停机**：捕获系统信号（`SIGINT`/`SIGTERM`），支持优雅退出
-- **多平台跨平台打包**：一键编译打包主流系统与架构（Linux/macOS/Windows/ARM等）
-- **极简容器镜像**：基于 Alpine 多阶段构建，镜像大小仅约 25MB
+- **Lightweight & High Performance**: Powered by Go standard networking with zero-copy stream splicing.
+- **Authentication**: Supports both unauthenticated mode and RFC 1929 username/password authentication.
+- **Robust & Resilient**: Dial timeout protection and automatic connection resource reclamation to avoid leaks.
+- **Graceful Shutdown**: Captures system signals (`SIGINT`/`SIGTERM`) for smooth teardown.
+- **Cross-Platform Packaging**: One-command cross-compilation for major OSes and architectures (Linux, macOS, Windows, ARM, etc.).
+- **Minimal Docker Image**: Multi-stage Alpine build resulting in a compact ~25 MB image.
 
-## 快速使用
+## Quick Start
 
-### 本地运行
+### Local Execution
 
-无需认证：
+Without authentication:
 ```bash
 ./socksserver -l :4455
 ```
 
-启用用户名与密码认证：
+With username and password authentication:
 ```bash
 ./socksserver -l :1080 -u myuser -p mypassword
 ```
 
-### Docker 运行
+### Docker
 
 ```bash
 docker run --name socksserver -d --privileged --network host --restart=always esrrhs/socksserver ./socksserver -u yourusername -p yourpassword -l :1080
 ```
 
-也可以直接传递参数：
+Or pass arguments directly:
 ```bash
 docker run --name socksserver -d --net=host --restart=always esrrhs/socksserver -u yourusername -p yourpassword -l :1080
 ```
 
-## 参数说明
+## Command Line Options
 
-| 参数 | 默认值 | 说明 |
+| Flag | Default | Description |
 | :--- | :--- | :--- |
-| `-l` | (必填) | 监听地址与端口，例如 `:1080` 或 `0.0.0.0:1080` |
-| `-u` | 空 | 认证用户名（不填则无需认证） |
-| `-p` | 空 | 认证密码 |
-| `-loglevel` | `info` | 日志级别 (`debug`, `info`, `warn`, `error`) |
-| `-nolog` | `0` | 是否关闭日志文件输出（`1` 为不写日志文件） |
-| `-noprint` | `0` | 是否禁止控制台输出（`1` 为不打印到 stdout） |
-| `-v` | `false` | 显示版本信息与构建时间 |
+| `-l` | (Required) | Listen address and port, e.g. `:1080` or `0.0.0.0:1080` |
+| `-u` | `""` | Username for authentication (empty for no auth) |
+| `-p` | `""` | Password for authentication |
+| `-loglevel` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
+| `-nolog` | `0` | Disable log file output (`1` to disable writing to log files) |
+| `-noprint` | `0` | Disable stdout printing (`1` to disable printing to stdout) |
+| `-v` | `false` | Show version and build date |
 
-## 编译与测试
+## Build & Test
 
-本项目提供了便捷的 `Makefile`：
+A handy `Makefile` is provided for standard workflows:
 
 ```bash
-# 编译二进制
+# Build binary
 make build
 
-# 运行单元测试与竞态检测
+# Run tests and race detector
 make test
 make race
 
-# 构建 Docker 镜像
+# Build Docker image
 make docker
 
-# 跨平台打包
-make pack-fast   # 快速打包主流平台 (linux/darwin/windows, amd64/arm64)
-make pack        # 打包所有支持的架构
+# Cross-platform packaging
+make pack-fast   # Quickly pack major platforms (linux/darwin/windows, amd64/arm64)
+make pack        # Pack all supported architectures
 ```
