@@ -1,16 +1,27 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/esrrhs/gohome/common"
 	"github.com/esrrhs/gohome/loggo"
 	"github.com/esrrhs/gohome/network"
-	"io"
-	"net"
+)
+
+var (
+	version   = "1.1.0"
+	buildDate = "unknown"
 )
 
 func main() {
-
 	defer common.CrashLog()
 
 	listen := flag.String("l", "", "listen addr")
@@ -19,8 +30,14 @@ func main() {
 	loglevel := flag.String("loglevel", "info", "log level")
 	user := flag.String("u", "", "username")
 	password := flag.String("p", "", "password")
+	showVersion := flag.Bool("v", false, "show version")
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("socksserver %s (built %s)\n", version, buildDate)
+		return
+	}
 
 	if *listen == "" {
 		flag.Usage()
@@ -38,7 +55,7 @@ func main() {
 		NoLogFile: *nolog > 0,
 		NoPrint:   *noprint > 0,
 	})
-	loggo.Info("start...")
+	loggo.Info("socksserver %s starting...", version)
 
 	tcpaddr, err := net.ResolveTCPAddr("tcp", *listen)
 	if err != nil {
@@ -53,74 +70,80 @@ func main() {
 	}
 	loggo.Info("listen ok %s", tcpaddr.String())
 
+	// Graceful shutdown on SIGINT / SIGTERM
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		sig := <-sigChan
+		loggo.Info("received signal %s, shutting down listener...", sig)
+		_ = tcplistenConn.Close()
+	}()
+
 	for {
 		conn, err := tcplistenConn.AcceptTCP()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				loggo.Info("listener closed, exiting accept loop")
+				break
+			}
 			loggo.Info("Error accept tcp %s", err)
 			continue
 		}
 
 		go process(conn, *user, *password)
 	}
+	loggo.Info("socksserver stopped")
 }
 
 func process(conn *net.TCPConn, user string, password string) {
-
 	defer common.CrashLog()
 
-	var err error = nil
+	var err error
 	if err = network.Sock5HandshakeBy(conn, user, password); err != nil {
 		loggo.Error("socks handshake: %s", err)
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 	_, targetAddr, err := network.Sock5GetRequest(conn)
 	if err != nil {
 		loggo.Error("error getting request: %s", err)
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 	// Sending connection established message immediately to client.
-	// This some round trip time for creating socks connection with the client.
+	// This saves some round trip time for creating socks connection with the client.
 	// But if connection failed, the client will get connection reset error.
 	_, err = conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x08, 0x43})
 	if err != nil {
 		loggo.Error("send connection confirmation: %s", err)
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 
 	loggo.Info("accept new sock5 conn: %s", targetAddr)
 
-	tcpsrcaddr := conn.RemoteAddr().(*net.TCPAddr)
+	tcpsrcaddr := conn.RemoteAddr().String()
+	loggo.Info("client accept new direct local tcp %s -> %s", tcpsrcaddr, targetAddr)
 
-	loggo.Info("client accept new direct local tcp %s %s", tcpsrcaddr.String(), targetAddr)
-
-	tcpaddrTarget, err := net.ResolveTCPAddr("tcp", targetAddr)
+	targetconn, err := net.DialTimeout("tcp", targetAddr, 10*time.Second)
 	if err != nil {
-		loggo.Info("direct local tcp ResolveTCPAddr fail: %s %s", targetAddr, err.Error())
+		loggo.Info("direct local tcp dial fail: %s %s", targetAddr, err.Error())
+		_ = conn.Close()
 		return
 	}
 
-	targetconn, err := net.DialTCP("tcp", nil, tcpaddrTarget)
-	if err != nil {
-		loggo.Info("direct local tcp DialTCP fail: %s %s", targetAddr, err.Error())
-		return
-	}
+	go transfer(conn, targetconn, tcpsrcaddr, targetconn.RemoteAddr().String())
+	go transfer(targetconn, conn, targetconn.RemoteAddr().String(), tcpsrcaddr)
 
-	go transfer(conn, targetconn, conn.RemoteAddr().String(), targetconn.RemoteAddr().String())
-	go transfer(targetconn, conn, targetconn.RemoteAddr().String(), conn.RemoteAddr().String())
-
-	loggo.Info("client accept new direct local tcp ok %s %s", tcpsrcaddr.String(), targetAddr)
+	loggo.Info("client accept new direct local tcp ok %s -> %s", tcpsrcaddr, targetAddr)
 }
 
 func transfer(destination io.WriteCloser, source io.ReadCloser, dst string, src string) {
-
 	defer common.CrashLog()
 
 	defer destination.Close()
 	defer source.Close()
 	loggo.Info("client begin transfer from %s -> %s", src, dst)
-	io.Copy(destination, source)
+	_, _ = io.Copy(destination, source)
 	loggo.Info("client end transfer from %s -> %s", src, dst)
 }
