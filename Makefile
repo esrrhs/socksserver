@@ -1,5 +1,5 @@
 BINARY_NAME=socksserver
-VERSION ?= $(shell git describe --tags --always 2>/dev/null || echo "1.1.0")
+VERSION ?= $(shell git describe --tags --always 2>/dev/null || echo "0.3")
 BUILD_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS=-s -w -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
 
