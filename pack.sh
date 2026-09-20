@@ -2,7 +2,7 @@
 set -euo pipefail
 
 NAME="socksserver"
-VERSION=$(git describe --tags --always 2>/dev/null || echo "1.1.0")
+VERSION=$(git describe --tags --always 2>/dev/null || echo "0.3")
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS="-s -w -X main.version=${VERSION} -X main.buildDate=${BUILD_DATE}"
 
