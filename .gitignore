@@ -1,4 +1,6 @@
 # Binaries for programs and plugins
+socksserver
+socksserver.exe
 *.exe
 *.exe~
 *.dll
@@ -10,6 +12,19 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Pack / Release outputs
+pack/
+pack.zip
+
+# Logs
+*.log
+socksserver_log/
+
+# OS / Editor files
+.DS_Store
+.idea/
+.vscode/
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
